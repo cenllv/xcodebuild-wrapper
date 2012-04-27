@@ -113,7 +113,7 @@ def openKeychain(password, keychain):
 	try:
 		subprocess.check_call(cmd_array)
 	except OSError as e:
-		logger.debug("Error in %s, exiting"% " ".join(cmd_string))
+		logger.debug("Error in %s, exiting"% " ".join(cmd_array))
 		writeToSTDERR("Error, please see the log file")
 		sys.exit(1)
 
