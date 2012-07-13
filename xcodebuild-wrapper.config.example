@@ -1,0 +1,4 @@
+[xcodebuild]
+SDK=iPhoneos5.0
+keychain=jenkins
+password=Apassword
