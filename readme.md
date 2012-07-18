@@ -28,7 +28,7 @@ Several log level are available (DEBUG, INFO, WARNING, ERROR, CRITICAL), default
 Usage:
 
 
-<blockquote>xcodebuild-wrapper.py --help
+<pre>xcodebuild-wrapper.py --help
 usage: xcodebuild-wrapper.py [-h] [-k KEYCHAIN] [-K KEYCHAINPASSWORD]
                              [-p PROJECT] [-P PROVISIONINGPROFILE] [-s SDK]
                              [-c CONFIG] [-n DEVNAME] [-t TARGET] [-d DEPLOY]
@@ -71,6 +71,6 @@ optional arguments:
   -C CONFIGFILE, --configFile CONFIGFILE
                         Configuration file, instead of each parameter
   --log LOGLEVEL        LogLevel, could be DEBUG | INFO | WARNING | ERROR |
-                        CRITICAL. Default value is INFO</blockquote>
+                        CRITICAL. Default value is INFO</pre>
 
 Remember, it's open source, feel free to improve.
