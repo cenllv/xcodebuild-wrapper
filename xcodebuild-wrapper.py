@@ -26,14 +26,13 @@
 # 3) default value (if apply)
 #
 # That's mean that no more parameters in cli are 
-# required. The required status must be traited
+# required. The required status must be check by hand
 # ------------------------------------------------------
 
 import logging
 import os
 import shutil
 import sys
-#import datetime
 import time
 import argparse
 import time
@@ -234,9 +233,6 @@ def distribution(server, user, password,distantFolder,sourceFolder):
 	except OSError as e:
 		logger.debug(cmd_string)
 		logger.debug("ErrorString == %s ErrorNum == %d"% (e.strerror,e.errno))
- 
-#def sourceFolderCheck(sourcePath):
-
 
 def gitClone(gitRepository, projectPath):
 	logger.debug("gitClone: gitRepository = %s, projectPath = %s" % (gitRepository, projectPath))
