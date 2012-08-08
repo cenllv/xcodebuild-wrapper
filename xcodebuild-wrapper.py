@@ -297,7 +297,7 @@ parser.add_argument('-g', '--gitrepository', action="store", dest="gitRepository
 parser.add_argument('-C', '--configFile', action="store", dest="configFile", help="Configuration file, instead of each parameter")
 
 parser.add_argument('--log', action="store", dest="logLevel", help="LogLevel, could be DEBUG | INFO | WARNING | ERROR | CRITICAL. Default value is INFO", default="INFO")
-
+parser.add_argument('--version', action='version', version='%(prog)s  0.91')
 
 args = parser.parse_args()
 
