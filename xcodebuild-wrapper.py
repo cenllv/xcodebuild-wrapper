@@ -26,13 +26,14 @@
 # 3) default value (if apply)
 #
 # That's mean that no more parameters in cli are 
-# required. The required status must be check by hand
+# required. The required status must be traited
 # ------------------------------------------------------
 
 import logging
 import os
 import shutil
 import sys
+#import datetime
 import time
 import argparse
 import time
@@ -131,6 +132,22 @@ def retreiveInfo(targetFolder,target):
 			outFile.close()
 	return filename
 
+def increaseBuildNumber(project,subdir,plistFile):
+	cmd_array=["/usr/libexec/PlistBuddy", "-c", "Print CWBuildNumber", "%s/%s/%s" %(project,subdir,plistFile)]
+	s = subprocess.Popen(cmd_array, stdout=subprocess.PIPE)
+	ret = s.stdout.readline()
+	buildNumber = int(ret)
+	logger.info("Old BuildNumber == %d" %buildNumber)
+	buildNumber+=1
+	logger.info("New BuildNumber == %d"%buildNumber)
+	cmd_array=["/usr/libexec/PlistBuddy", "-c", "Set :CWBuildNumber %s" %(buildNumber),"%s/%s/%s" % (project,subdir,plistFile)]
+	try:
+		subprocess.check_call(cmd_array)
+	except OSError as e:
+		logger.debug("Error in %s. Exiting"% " ".join(cmd_array)) 
+		logger.debug("ErrorString == %s ErrorNum == %d" % (e.strerror,e.errno))
+		writeToSTDERR("Error during increase BuildNumber")
+
 def createManifest(info,target,targetFolder,deployment_address):
 	logger.debug("createManifest: info = %s, target = %s, targetFolder = %s, deployment_address = %s"% (info, target, targetFolder, deployment_address))
 	xmlfile="/%s/%s.xml"%(targetFolder,target)
@@ -138,7 +155,7 @@ def createManifest(info,target,targetFolder,deployment_address):
 	subprocess.Popen('plutil -convert xml1 -o %s %s'%(xmlfile,info),shell=True).wait()
 	infoPlistFile = open(xmlfile, 'r')
 	app_plist = plistlib.readPlist(infoPlistFile)
-	os.remove(xmlfile)
+	#os.remove(xmlfile)
 	manifestFilename='/%s/manifest.plist'%(targetFolder)
 	
 	logger.debug(deployment_address)
@@ -166,6 +183,14 @@ def createManifest(info,target,targetFolder,deployment_address):
 
 def fillHTML(app_name,manifest):
 	logger.debug("fillHTML: app_name = %s, manifest = %s" % (app_name,manifest))
+	xmlFile = "/%s/%s.xml"%(targetFolder,target)
+	infoPlistFile = open(xmlFile, 'r')
+	app_plist = plistlib.readPlist(infoPlistFile)
+	buildNumber = app_plist['CWBuildNumber']
+	buildString = str(buildNumber)
+	
+	logger.debug("buildNumber == %d buildString == %s"%(buildNumber, buildString))
+
 	manifestPath="%s%s"%(deployment_address,manifest)
 	template_html="""
 	<!DOCTYPE html PUBLIC "-//WC3/DTD HTML 1.0 Transitional/EN" "http://www.w3c.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -173,13 +198,15 @@ def fillHTML(app_name,manifest):
 	<head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-	<title>[BETA_NAME] - Beta Release</title>
+	<title>[BETA_NAME] - Beta Release ([BUILD_NUMBER])</title>
 	<style type="text/css">
-	body {background:#fff;margin:0;padding:0;font-family:arial,helvetica,sans-serif;text-align:center;padding:10px;color:#333;font-size:16px;}
-	#container {width:300px;margin:0 auto;}
+	body {background:#777;margin:0;padding:0;font-family:arial,helvetica,sans-serif;text-align:center;padding:10px;color:#333;font-size:16px;}
+	#container {width:300px;margin:0 auto;border: 3px solid #333;
+	border-radius: 15px;box-shadow:0px 2px 2px 0px rgba(0, 0, 0, 0.5),
+	0px 2px 2px 0px rgba(255, 255, 255, 0.5) inset;}
 	h1 {margin:0;padding:0;font-size:14px;}
 	p {font-size:13px;}
-	.link {background:#ecf5ff;border-top:1px solid #fff;border:1px solid #dfebf8;margin-top:.5em;padding:.3em;}
+	.link {background:#afafaf;border-top:1px solid #aaa;border:1px solid #bbb;margin-top:.5em;padding:.3em;}
 	.link a {text-decoration:none;font-size:15px;display:block;color:#069;}
 	
 	</style>
@@ -190,7 +217,7 @@ def fillHTML(app_name,manifest):
 	
 	<h1>Dear testers</h1>
 	
-	<div class="link"><a href="itms-services://?action=download-manifest&url=[DEPLOYMENT_PATH]">Tap here to install<br />[BETA_NAME]<br />On Your Device</a></div>
+	<div class="link"><a href="itms-services://?action=download-manifest&url=[DEPLOYMENT_PATH]">Tap here to install<br />[BETA_NAME] ([BUILD_NUMBER])<br />On Your Device</a></div>
 	
 	<p><strong>Link didn't work?</strong><br />
 	Make sure you're visiting this page on your device, not your computer.</p>
@@ -200,8 +227,10 @@ def fillHTML(app_name,manifest):
 	"""
 	TEMPLATE_PLACEHOLDER_NAME = '[BETA_NAME]'
 	TEMPLATE_PLACEHOLDER_DEPLOYMENT_PATH = '[DEPLOYMENT_PATH]'
+	TEMPLATE_PLACEHOLDER_BUILD = '[BUILD_NUMBER]'
 	template_html = string.replace(template_html, TEMPLATE_PLACEHOLDER_NAME, app_name)
 	template_html = string.replace(template_html, TEMPLATE_PLACEHOLDER_DEPLOYMENT_PATH, manifestPath)
+	template_html = string.replace(template_html, TEMPLATE_PLACEHOLDER_BUILD,buildString)
 	return template_html
 
 def createIndexHTML(targetFolder,target,manifest):
@@ -233,6 +262,9 @@ def distribution(server, user, password,distantFolder,sourceFolder):
 	except OSError as e:
 		logger.debug(cmd_string)
 		logger.debug("ErrorString == %s ErrorNum == %d"% (e.strerror,e.errno))
+ 
+#def sourceFolderCheck(sourcePath):
+
 
 def gitClone(gitRepository, projectPath):
 	logger.debug("gitClone: gitRepository = %s, projectPath = %s" % (gitRepository, projectPath))
@@ -480,11 +512,15 @@ logger.debug("appPath == %s"%(appPath))
 
 # --- check presence of the keychain and the project
 if checkPresence(projectPath) is not 1:
-	if checkPresence("%s/.git"%(workspace)):
-		if gitrepository:
-			gitclone(gitRepository,workspace)
-		else:
-			gitpull(workspace)	
+	if checkPresence("%s/.git"%(workspace)) is not 1:
+		logger.debug(".git folder found in %s"%(workspace))
+		if gitRepository is not None:
+			gitPull(workspace)
+	else:
+		if gitRepository is not None:
+			gitClone(gitRepository,workspace)
+	# else:
+	# 	logger.debug(".git folder not found in %s" %(workspace))
 
 # --- openning the keychain
 if checkPresence(keychain) is not 1:
@@ -492,6 +528,9 @@ if checkPresence(keychain) is not 1:
 
 	# --- create the target folder in /tmp
 createTargetFolder(targetFolder)
+
+	# --- Increase the Build Number
+increaseBuildNumber(workspace, "PillStock", "PillStock-Info.plist")
 
 	# --- compile to .app
 compileApp(SDK, projectPath, configuration, target)
@@ -510,4 +549,3 @@ htmlFile=createIndexHTML(targetFolder,target,manifest)
 
 	# --- Send files on distribution machine
 distribution(remoteHost, username, password, remoteFolder, targetFolder)
-
